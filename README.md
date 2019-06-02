@@ -19,13 +19,12 @@ The program ends when the escape key is pressed
 
 For ball_movement
 
-test by keyboard with  
-W, S: x.pos +- speed_unit  
-A, D: y.pos +- speed_unit  
-I, K: x.pos + speed_unit_m * framerate  
-J, L: y.pos + speed_unit_m * framerate  
-speed_unit = 0.001  
-framerate = 60
+movement on plane completed
+
+tested by keyboard with  
+W, S: x speed
+A, D: y speed
+P: reset the speed_unit  
 
 ### Mode2
 We made fix that Mori-kun said in Slack.  

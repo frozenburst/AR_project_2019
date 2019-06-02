@@ -377,13 +377,18 @@
 
 #include "DrawPrimitives.h"
 
+// The vector of plane
 float xangle = 0.f;
 float yangle = 0.f;
 float zangle = 0.f;
+int plane_flag[3] = {0, 0, 0};	// flag of x, y, z with 0: stop 1: increase -1: decrease
+float angle_unit = 30.f / 60.0f; // angle change with one keyboard press
 
 // The position of ball
 float ballpos[3] = { 0.012f, -0.0f, 0.001f };
 float ball_speed[3] = { .0f, .0f, .0f };
+int ball_flag[3] = {0, 0, 0};	// flag of x, y, z with 0: stop 1: increase -1: decrease
+float ball_speed_unit = 0.0001f;
 /* program & OpenGL initialization */
 void init(int argc, char *argv[])
 {
@@ -397,8 +402,12 @@ void init(int argc, char *argv[])
     glClearDepth( 1.0 );
 }
 
-void checkAngleWithGravity() {
-
+void checkSpeedWithGravity() {
+	float g = 9.8f;		// gravity constant
+	float pi = acos(-1);
+	// calculate one by one. @magicall different between plane and ball.........
+	ball_speed[0] += 1.0f * sinf(yangle/180.0f*pi) * g * ball_speed_unit;
+	ball_speed[1] += -1.0f * sinf(xangle/180.0f*pi) * g * ball_speed_unit;
 }
 
 void checkCollision() {
@@ -406,12 +415,19 @@ void checkCollision() {
 }
 
 void ball_movement() {
-	checkAngleWithGravity();
-	checkCollision();
+	float framerate = 60.0f;
 
-	ballpos[0] += ball_speed[0];
-	ballpos[1] += ball_speed[1];
-	ballpos[2] += ball_speed[2];
+	// manipulate the speed by keyboard
+	ball_speed[0] += ball_flag[0] * ball_speed_unit;
+	ball_speed[1] += ball_flag[1] * ball_speed_unit;
+
+	checkSpeedWithGravity();
+
+	ballpos[0] += 0.5f * ball_speed[0] / framerate;
+	ballpos[1] += 0.5f * ball_speed[1] / framerate;
+	ballpos[2] += 0.5f * ball_speed[2] / framerate;
+
+	//checkCollision(); // if collision happen, adjust the pos and speed.
 }
 
 void display(GLFWwindow* window) {
@@ -440,6 +456,9 @@ void display(GLFWwindow* window) {
     // move the object in a fancy way
 
     // rotate the object
+	xangle += plane_flag[0] * angle_unit;
+	yangle += plane_flag[1] * angle_unit;
+	zangle += plane_flag[2] * angle_unit;
     glRotatef(xangle, 1.f, 0.f, 0.f);
     glRotatef(yangle, 0.f, 1.f, 0.f);
     glRotatef(zangle, 0.f, 0.f, 1.f);
@@ -467,36 +486,41 @@ void reshape( GLFWwindow* window, int width, int height ) {
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    float angle_unit = 10.f; // angle change with one keyboard press
-    
-    if (key == GLFW_KEY_UP && action == GLFW_PRESS) xangle -= angle_unit;
-    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) xangle += angle_unit;
-    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) yangle -= angle_unit;
-    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) yangle += angle_unit;
-    if (key == GLFW_KEY_RIGHT_SHIFT && action == GLFW_PRESS) zangle += angle_unit;
-    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS) zangle -= angle_unit;
+
+    if (key == GLFW_KEY_UP && action == GLFW_PRESS) plane_flag[0] = -1;
+    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) plane_flag[0] = 1;
+	if ((key == GLFW_KEY_UP || key == GLFW_KEY_DOWN) && action == GLFW_RELEASE) plane_flag[0] = 0;
+    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) plane_flag[1] = -1;
+    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) plane_flag[1] = 1;
+	if ((key == GLFW_KEY_LEFT || key == GLFW_KEY_RIGHT) && action == GLFW_RELEASE) plane_flag[1] = 0;
+    if (key == GLFW_KEY_RIGHT_SHIFT && action == GLFW_PRESS) plane_flag[2] = 1;
+    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS) plane_flag[2] = -1;
+	if ((key == GLFW_KEY_RIGHT_SHIFT || key == GLFW_KEY_LEFT_SHIFT) && action == GLFW_RELEASE) plane_flag[2] = 0;
 	//ball movement by keyboard
-	float ball_speed_unit = 0.001f;
-	float framerate = 60.0f;
-	float ball_speed_m = ball_speed_unit / framerate;
-	if (key == GLFW_KEY_W && action == GLFW_PRESS) ballpos[1] += ball_speed_unit;
-	if (key == GLFW_KEY_S && action == GLFW_PRESS) ballpos[1] -= ball_speed_unit;
-	if (key == GLFW_KEY_A && action == GLFW_PRESS) ballpos[0] -= ball_speed_unit;
-	if (key == GLFW_KEY_D && action == GLFW_PRESS) ballpos[0] += ball_speed_unit;
-	if (key == GLFW_KEY_I && action == GLFW_PRESS) ball_speed[1] += ball_speed_m;
-	if (key == GLFW_KEY_K && action == GLFW_PRESS) ball_speed[1] -= ball_speed_m;
-	if (key == GLFW_KEY_J && action == GLFW_PRESS) ball_speed[0] -= ball_speed_m;
-	if (key == GLFW_KEY_L && action == GLFW_PRESS) ball_speed[0] += ball_speed_m;
+	if (key == GLFW_KEY_W && action == GLFW_PRESS) ball_flag[1] = 1;
+	if (key == GLFW_KEY_S && action == GLFW_PRESS) ball_flag[1] = -1;
+	if ((key == GLFW_KEY_W || key == GLFW_KEY_S) && action == GLFW_RELEASE) ball_flag[1] = 0;
+	if (key == GLFW_KEY_A && action == GLFW_PRESS) ball_flag[0] = -1;
+	if (key == GLFW_KEY_D && action == GLFW_PRESS) ball_flag[0] = 1;
+	if ((key == GLFW_KEY_A || key == GLFW_KEY_D) && action == GLFW_RELEASE) ball_flag[0] = 0;
 	if (key == GLFW_KEY_P && action == GLFW_PRESS) {
-		ball_speed[0] = .0f;
-		ball_speed[1] = .0f;
-		ball_speed[2] = .0f;
+		ball_flag[0] = 0;
+		ball_flag[1] = 0;
 	}
 	// end of ball movement by keyboard
     if (key == GLFW_KEY_ENTER && action == GLFW_PRESS){
         xangle = 0.f;
         yangle = 0.f;
         zangle = 0.f;
+		ball_speed[0] = .0f;
+		ball_speed[1] = .0f;
+		ball_speed[2] = .0f;
+		ball_flag[0] = 0;
+		ball_flag[1] = 0;
+		ball_flag[2] = 0;
+		ballpos[0] = 0.012f;
+		ballpos[1] = -0.0f;
+		ballpos[2] = 0.001f;
     }
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) exit(0);
 }
