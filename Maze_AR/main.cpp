@@ -363,7 +363,7 @@
 //    return 0;
 //
 //}
-
+//
 #define GLFW_INCLUDE_GLU
 #define GL_SILENCE_DEPRECATION
 #include <stdio.h>
@@ -380,6 +380,10 @@
 float xangle = 0.f;
 float yangle = 0.f;
 float zangle = 0.f;
+
+// The position of ball
+float ballpos[3] = { 0.012f, -0.0f, 0.001f };
+float ball_speed[3] = { .0f, .0f, .0f };
 /* program & OpenGL initialization */
 void init(int argc, char *argv[])
 {
@@ -392,6 +396,24 @@ void init(int argc, char *argv[])
 
     glClearDepth( 1.0 );
 }
+
+void checkAngleWithGravity() {
+
+}
+
+void checkCollision() {
+	
+}
+
+void ball_movement() {
+	checkAngleWithGravity();
+	checkCollision();
+
+	ballpos[0] += ball_speed[0];
+	ballpos[1] += ball_speed[1];
+	ballpos[2] += ball_speed[2];
+}
+
 void display(GLFWwindow* window) {
 
     float ratio;
@@ -422,8 +444,11 @@ void display(GLFWwindow* window) {
     glRotatef(yangle, 0.f, 1.f, 0.f);
     glRotatef(zangle, 0.f, 0.f, 1.f);
     drawMaze();
-    glColor4f(0,0,0,0.5);
-    glTranslatef( 0.012f, -0.0f, 0.001f );
+
+	// Sphere(ball) event
+    glColor4f(0,0,1,0.5);
+	ball_movement();
+    glTranslatef(ballpos[0], ballpos[1], ballpos[2]);
     drawSphere( 0.0008, 10, 10 );
 }
 
@@ -450,6 +475,24 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) yangle += angle_unit;
     if (key == GLFW_KEY_RIGHT_SHIFT && action == GLFW_PRESS) zangle += angle_unit;
     if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS) zangle -= angle_unit;
+	//ball movement by keyboard
+	float ball_speed_unit = 0.001f;
+	float framerate = 60.0f;
+	float ball_speed_m = ball_speed_unit / framerate;
+	if (key == GLFW_KEY_W && action == GLFW_PRESS) ballpos[1] += ball_speed_unit;
+	if (key == GLFW_KEY_S && action == GLFW_PRESS) ballpos[1] -= ball_speed_unit;
+	if (key == GLFW_KEY_A && action == GLFW_PRESS) ballpos[0] -= ball_speed_unit;
+	if (key == GLFW_KEY_D && action == GLFW_PRESS) ballpos[0] += ball_speed_unit;
+	if (key == GLFW_KEY_I && action == GLFW_PRESS) ball_speed[1] += ball_speed_m;
+	if (key == GLFW_KEY_K && action == GLFW_PRESS) ball_speed[1] -= ball_speed_m;
+	if (key == GLFW_KEY_J && action == GLFW_PRESS) ball_speed[0] -= ball_speed_m;
+	if (key == GLFW_KEY_L && action == GLFW_PRESS) ball_speed[0] += ball_speed_m;
+	if (key == GLFW_KEY_P && action == GLFW_PRESS) {
+		ball_speed[0] = .0f;
+		ball_speed[1] = .0f;
+		ball_speed[2] = .0f;
+	}
+	// end of ball movement by keyboard
     if (key == GLFW_KEY_ENTER && action == GLFW_PRESS){
         xangle = 0.f;
         yangle = 0.f;
