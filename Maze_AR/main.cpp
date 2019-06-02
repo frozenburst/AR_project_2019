@@ -385,7 +385,8 @@ int plane_flag[3] = {0, 0, 0};	// flag of x, y, z with 0: stop 1: increase -1: d
 float angle_unit = 30.f / 60.0f; // angle change with one keyboard press
 
 // The position of ball
-float ballpos[3] = { 0.012f, -0.0f, 0.001f };
+float ballpos[3] = { -0.0135f, 0.0125f, 0.001f };
+float ballpos_org[3] = { -0.0135f, 0.0125f, 0.001f };
 float ball_speed[3] = { .0f, .0f, .0f };
 int ball_flag[3] = {0, 0, 0};	// flag of x, y, z with 0: stop 1: increase -1: decrease
 float ball_speed_unit = 0.0001f;
@@ -411,7 +412,19 @@ void checkSpeedWithGravity() {
 }
 
 void checkCollision() {
-	
+    int j_idx = (ballpos[0] + 0.0135f) / 0.001f;
+    int i_idx = (ballpos[1] - 0.0135f) / (-0.001f);
+//    cout << (ballpos[0] + 0.0135f) << ' ' << (ballpos[0] + 0.0135f - j_idx*0.001f) <<endl;
+    if(map[j_idx][i_idx] == 1){
+        ballpos[0] = ballpos_org[0];
+        ballpos[1] = ballpos_org[1];
+        ball_speed[0] = -ball_speed[0];
+        ball_speed[1] = -ball_speed[1];
+    }
+    else{
+        ballpos_org[0] = ballpos[0];
+        ballpos_org[1] = ballpos[1];
+    }
 }
 
 void ball_movement() {
@@ -427,7 +440,7 @@ void ball_movement() {
 	ballpos[1] += 0.5f * ball_speed[1] / framerate;
 	ballpos[2] += 0.5f * ball_speed[2] / framerate;
 
-	//checkCollision(); // if collision happen, adjust the pos and speed.
+	checkCollision(); // if collision happen, adjust the pos and speed.
 }
 
 void display(GLFWwindow* window) {
