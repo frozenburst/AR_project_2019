@@ -212,24 +212,6 @@ vector < vector < int > > generate_maze() {
     //=== start of recursive call
     create();
     return arr;
-    // //===== printing the finished maze
-    // for (int j = 0; j < h; j++) {
-    //     for (int i = 0; i < w; i++) {
-    //         if (arr[j][i] == 1) {
-    //             cout << b;
-    //         } else if (j == 0 && i == 1) {
-    //             cout << "S";
-    //         } else if (j == h - 1 && i == w - 2) {
-    //             cout << "E";
-    //         } else {
-    //             if (arr[j][i] == 2) {
-    //                 arr[j][i] = 0;
-    //             }
-    //             cout << " ";
-    //         }
-    //     }
-    //     cout << "\n";
-    // }
 }
 
 
@@ -284,20 +266,15 @@ void drawCuboid(float width, float height, float depth)
     glVertex3f(-width/2,-height/2,-depth/2);
     glVertex3f(width/2,-height/2,-depth/2);
 }
-bool ini = false;
-vector < vector < int > > map;
-void drawMaze(){
+
+void drawMaze(vector<vector<int>>& maze){
     // base
     glColor4f(1,1,1,1);
     drawCuboid(0.028f, 0.028f, 0.001f);
     // wall
-    if(!ini){
-        map = generate_maze();
-        ini = true;
-    }
     for (int j = 0; j < h; j++) {
         for (int i = 0; i < w; i++) {
-            if (map[j][i] == 1) {
+            if (maze[j][i] == 1) {
                 glPushMatrix();
                 glColor4f(1,0,0,1);
                 glTranslatef( -0.0135f + j * 0.001f, 0.0135f + i * (-0.001f), 0.001f );
@@ -317,22 +294,9 @@ void drawMaze(){
                 glPopMatrix();
             }
         }
-        
+
     }
-//    for (int i = 0; i < map.size(); ++i)
-//    {
-//        for (int j = 0; j < map[0].size(); ++j)
-//        {
-//            if (map[i][j] == ' ')
-//                continue;
-//            glPushMatrix();
-//            glColor4f(1,0,0,1);
-//            glTranslatef( -0.0135f + i * 0.001f, 0.0135f + j * (-0.001f), 0.001f );
-//            drawCuboid(0.001f, 0.001f, 0.001f);
-//            glPopMatrix();
-//        }
-//        cout<<endl;
-//    }
+
 
 }
 //void drawMaze(){
