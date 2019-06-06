@@ -376,6 +376,7 @@
 //#include <GL/glew.h>
 
 #include "DrawPrimitives.h"
+vector < vector < int > > maze;
 
 // The vector of plane
 float xangle = 0.f;
@@ -385,11 +386,15 @@ int plane_flag[3] = {0, 0, 0};	// flag of x, y, z with 0: stop 1: increase -1: d
 float angle_unit = 30.f / 60.0f; // angle change with one keyboard press
 
 // The position of ball
-float ballpos[3] = { -0.0135f, 0.0125f, 0.001f };
-float ballpos_org[3] = { -0.0135f, 0.0125f, 0.001f };
+float ballpos[3] = { -0.0125f, 0.0125f, 0.001f };
 float ball_speed[3] = { .0f, .0f, .0f };
+
 int ball_flag[3] = {0, 0, 0};	// flag of x, y, z with 0: stop 1: increase -1: decrease
 float ball_speed_unit = 0.0001f;
+float ball_radius = 0.0004f;
+
+int main_dir = -1; //-1: equal, 0: j, horizontal, 1: i, vertical
+
 /* program & OpenGL initialization */
 void init(int argc, char *argv[])
 {
@@ -406,26 +411,123 @@ void init(int argc, char *argv[])
 void checkSpeedWithGravity() {
 	float g = 9.8f;		// gravity constant
 	float pi = acos(-1);
+    
 	// calculate one by one. @magicall different between plane and ball.........
 	ball_speed[0] += 1.0f * sinf(yangle/180.0f*pi) * g * ball_speed_unit;
 	ball_speed[1] += -1.0f * sinf(xangle/180.0f*pi) * g * ball_speed_unit;
+    
 }
 
-void checkCollision() {
+void checkCollision_i(float add_v_i){
+    
+    float ballpos_new_i = ballpos[1]+add_v_i;
+    float ballpos_up = ballpos_new_i+ball_radius;
+    float ballpos_down = ballpos_new_i-ball_radius;
+    
+    cout << ballpos_up << ' ' << ballpos_down  << endl;
+    
+    
     int j_idx = (ballpos[0] + 0.0135f) / 0.001f;
-    int i_idx = (ballpos[1] - 0.0135f) / (-0.001f);
-//    cout << (ballpos[0] + 0.0135f) << ' ' << (ballpos[0] + 0.0135f - j_idx*0.001f) <<endl;
-    if(map[j_idx][i_idx] == 1){
-        ballpos[0] = ballpos_org[0];
-        ballpos[1] = ballpos_org[1];
-        ball_speed[0] = -ball_speed[0];
-        ball_speed[1] = -ball_speed[1];
+    int i_idx_new = 0;
+    
+    if(add_v_i < 0){//down
+        i_idx_new = (ballpos_down - 0.0135f) / (-0.001f);
+        
+        if(maze[j_idx][i_idx_new+1] == 1){
+            float upper_bound = 0.0135f - (i_idx_new+1)*(0.001f) + 0.0005f;
+            cout << "upperbd " << upper_bound << ' ' << ballpos_down << endl;
+            if(ballpos_down < upper_bound){
+                cout << "i col (down dir)!" << endl;
+                ball_speed[1] = -0.5f*ball_speed[1];
+            }
+            else{
+                ballpos[1] += add_v_i;
+            }
+        }
+        else{
+            ballpos[1] += add_v_i;
+        }
+        
     }
-    else{
-        ballpos_org[0] = ballpos[0];
-        ballpos_org[1] = ballpos[1];
+    else if(add_v_i > 0){//up
+        i_idx_new = (ballpos_up - 0.0135f) / (-0.001f);
+        
+        if(maze[j_idx][i_idx_new] == 1){
+            float lower_bound = 0.0135f - (i_idx_new)*(0.001f) - 0.0005f;
+            cout << "lower_bound " << lower_bound << ' ' << ballpos_up << endl;
+            if(ballpos_up > lower_bound){
+                cout << "i col (up dir)!" << endl;
+                ball_speed[1] = -0.5f*ball_speed[1];
+            }
+            else{
+                ballpos[1] += add_v_i;
+            }
+        }
+        else{
+            ballpos[1] += add_v_i;
+        }
+        
     }
+
+    cout << "i " << j_idx << ' ' << ballpos_new_i << ' ' << i_idx_new << endl;
+
 }
+
+
+void checkCollision_j(float add_v_j){
+    
+    float ballpos_new_j = ballpos[0]+add_v_j;
+    float ballpos_left = ballpos_new_j-ball_radius;
+    float ballpos_right = ballpos_new_j+ball_radius;
+    
+    cout << ballpos_left << ' ' << ballpos_right << endl;
+    
+    
+    int i_idx = (ballpos[1] - 0.0135f) / (-0.001f);
+    int j_idx_new = (ballpos_new_j + 0.0135f) / (0.001f);
+    
+    if(add_v_j < 0){//left
+        j_idx_new = (ballpos_left + 0.0135f) / (0.001f);
+        
+        if(maze[j_idx_new][i_idx] == 1 || j_idx_new == 0){
+            float right_bound = -0.0135f + (j_idx_new)*(0.001f) + 0.0005f;
+            cout << "right_bound " << right_bound << ' ' << ballpos_left << endl;
+            if(ballpos_left < right_bound){
+                cout << "j col (left dir)!" << endl;
+                ball_speed[0] = -0.5f*ball_speed[0];
+            }
+            else{
+                ballpos[0] += add_v_j;
+            }
+        }
+        else{
+            ballpos[0] += add_v_j;
+        }
+        
+    }
+    else if(add_v_j > 0){//right
+        j_idx_new = (ballpos_right + 0.0135f) / (0.001f);
+        
+        if(maze[j_idx_new+1][i_idx] == 1){
+            float left_bound = -0.0135f + (j_idx_new+1)*(0.001f) - 0.0005f;
+            cout << "left_bound " << left_bound << ' ' << ballpos_right << endl;
+            if(ballpos_right > left_bound){
+                cout << "j col (right dir)!" << endl;
+                ball_speed[0] = -0.5f*ball_speed[0];
+            }
+            else{
+                ballpos[0] += add_v_j;
+            }
+        }
+        else{
+            ballpos[0] += add_v_j;
+        }
+    }
+    
+    cout << "j "   << ballpos_new_j << ' ' << j_idx_new << ' '<< i_idx << endl;
+    
+}
+
 
 void ball_movement() {
 	float framerate = 60.0f;
@@ -435,12 +537,13 @@ void ball_movement() {
 	ball_speed[1] += ball_flag[1] * ball_speed_unit;
 
 	checkSpeedWithGravity();
+    
+    checkCollision_j(0.5f * ball_speed[0]/ framerate);
+    checkCollision_i(0.5f * ball_speed[1]/ framerate);
 
-	ballpos[0] += 0.5f * ball_speed[0] / framerate;
-	ballpos[1] += 0.5f * ball_speed[1] / framerate;
-	ballpos[2] += 0.5f * ball_speed[2] / framerate;
+//    ballpos[2] += 0.5f * ball_speed[2] / framerate;
 
-	checkCollision(); // if collision happen, adjust the pos and speed.
+
 }
 
 void display(GLFWwindow* window) {
@@ -475,13 +578,13 @@ void display(GLFWwindow* window) {
     glRotatef(xangle, 1.f, 0.f, 0.f);
     glRotatef(yangle, 0.f, 1.f, 0.f);
     glRotatef(zangle, 0.f, 0.f, 1.f);
-    drawMaze();
+    drawMaze(maze);
 
 	// Sphere(ball) event
     glColor4f(0,0,1,0.5);
 	ball_movement();
     glTranslatef(ballpos[0], ballpos[1], ballpos[2]);
-    drawSphere( 0.0008, 10, 10 );
+    drawSphere( ball_radius, 10, 10 );
 }
 
 void reshape( GLFWwindow* window, int width, int height ) {
@@ -500,15 +603,33 @@ void reshape( GLFWwindow* window, int width, int height ) {
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 
-    if (key == GLFW_KEY_UP && action == GLFW_PRESS) plane_flag[0] = -1;
-    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) plane_flag[0] = 1;
-	if ((key == GLFW_KEY_UP || key == GLFW_KEY_DOWN) && action == GLFW_RELEASE) plane_flag[0] = 0;
-    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) plane_flag[1] = -1;
-    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) plane_flag[1] = 1;
-	if ((key == GLFW_KEY_LEFT || key == GLFW_KEY_RIGHT) && action == GLFW_RELEASE) plane_flag[1] = 0;
-    if (key == GLFW_KEY_RIGHT_SHIFT && action == GLFW_PRESS) plane_flag[2] = 1;
-    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS) plane_flag[2] = -1;
-	if ((key == GLFW_KEY_RIGHT_SHIFT || key == GLFW_KEY_LEFT_SHIFT) && action == GLFW_RELEASE) plane_flag[2] = 0;
+    if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
+        plane_flag[0] = -1;
+    }
+    if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
+        plane_flag[0] = 1;
+    }
+    if ((key == GLFW_KEY_UP || key == GLFW_KEY_DOWN) && action == GLFW_RELEASE) {
+        plane_flag[0] = 0;
+    }
+    if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
+        plane_flag[1] = -1;
+    }
+    if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+        plane_flag[1] = 1;
+    }
+    if ((key == GLFW_KEY_LEFT || key == GLFW_KEY_RIGHT) && action == GLFW_RELEASE) {
+        plane_flag[1] = 0;
+    }
+    if (key == GLFW_KEY_RIGHT_SHIFT && action == GLFW_PRESS) {
+        plane_flag[2] = 1;
+    }
+    if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS) {
+        plane_flag[2] = -1;
+    }
+    if ((key == GLFW_KEY_RIGHT_SHIFT || key == GLFW_KEY_LEFT_SHIFT) && action == GLFW_RELEASE) {
+        plane_flag[2] = 0;
+    }
 	//ball movement by keyboard
 	if (key == GLFW_KEY_W && action == GLFW_PRESS) ball_flag[1] = 1;
 	if (key == GLFW_KEY_S && action == GLFW_PRESS) ball_flag[1] = -1;
@@ -517,8 +638,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	if (key == GLFW_KEY_D && action == GLFW_PRESS) ball_flag[0] = 1;
 	if ((key == GLFW_KEY_A || key == GLFW_KEY_D) && action == GLFW_RELEASE) ball_flag[0] = 0;
 	if (key == GLFW_KEY_P && action == GLFW_PRESS) {
-		ball_flag[0] = 0;
-		ball_flag[1] = 0;
+        ball_flag[0] = 0;
+        ball_flag[1] = 0;
 	}
 	// end of ball movement by keyboard
     if (key == GLFW_KEY_ENTER && action == GLFW_PRESS){
@@ -531,8 +652,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		ball_flag[0] = 0;
 		ball_flag[1] = 0;
 		ball_flag[2] = 0;
-		ballpos[0] = 0.012f;
-		ballpos[1] = -0.0f;
+		ballpos[0] = -0.0125f;
+		ballpos[1] = 0.0125f;
 		ballpos[2] = 0.001f;
     }
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) exit(0);
@@ -566,7 +687,22 @@ int main(int argc, char* argv[]) {
     glfwSwapInterval( 1 );
     // initialize the GL library
     init(argc, argv);
-
+    
+    maze = generate_maze();
+    for (int i = 0; i < maze.size(); ++i)
+    {
+        for (int j = 0; j < maze[0].size(); ++j)
+        {
+            if (maze[j][i] == 1) {
+                cout << '-';
+            }
+            else{
+                cout << ' ';
+            }
+        }
+        cout<<endl;
+    }
+    
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
