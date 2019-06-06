@@ -84,7 +84,7 @@ void MarkerTracker::init()
 	cv::resizeWindow("Marker", 120, 120 );
 
 	int max = 255;
-	int slider_value = 100;
+	int slider_value = 120;
 	cv::createTrackbar( "Threshold", kWinName2, &slider_value, 255, trackbarHandler, &slider_value);
 
 	int bw_sileder_value = bw_thresh;
@@ -392,7 +392,7 @@ void MarkerTracker::findMarker( cv::Mat &image_bgr, std::vector<Marker> &markers
 		cv::warpPerspective(image_gray, iplMarker, projMat, cv::Size(6, 6));
 		
 
-		const int bw_thresh = 55;
+		const int bw_thresh = 100;
 		cv::threshold(iplMarker, iplMarker, bw_thresh, 255, cv::THRESH_BINARY);
 		//now we have a B/W image of a supposed Marker
 
