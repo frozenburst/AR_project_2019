@@ -10,10 +10,13 @@
 #include <opencv2/imgproc.hpp> // include image processing headers
 #include <opencv2/highgui.hpp> // include GUI-related headers
 
-
 #include "PoseEstimation.h"
 #include "MarkerTracker.h"
 #include "DrawPrimitives.h"
+
+#include <Windows.h>
+#include <String>
+#pragma comment(lib, "winmm.lib")
 #define PI 3.1415926535
 vector < vector < int > > maze;
 
@@ -36,7 +39,7 @@ float ballpos[3] = { -0.0125f, 0.0125f, 0.001f };
 float ball_speed[3] = { .0f, .0f, .0f };
 
 int ball_flag[3] = {0, 0, 0};	// flag of x, y, z with 0: stop 1: increase -1: decrease
-float ball_speed_unit = 0.0001f;
+float ball_speed_unit = 0.0008f;
 float ball_radius = 0.0004f;
 
 float resultTransposedMatrix[16];
@@ -46,6 +49,7 @@ int towardsList[2] = {0x0690, 0x0690};
 int towardscounter = 0;
 // Position ballpos;
 int ballspeed = 100;
+bool isPlay = false;
 // Added in Exercise 9 - End *****************************************************************
 
 //camera settings
@@ -66,6 +70,45 @@ void InitializeVideoStream( cv::VideoCapture &camera ) {
            exit(0);
        }
    }
+}
+
+// added by wupoyu
+void musicControl(string command) {
+	bool isMusicPlay = false;
+	char tch[100];
+	string message ="";
+	if (isMusicPlay==false && command == "play") {
+		mciSendString("Open bgm_maoudamashii_8bit28.wav alias bgm", NULL, 0, NULL);
+		mciSendString("play bgm", NULL, 0, NULL);
+		isMusicPlay = true;
+	}
+	else {
+		if (command == "pause") {
+			mciSendString("pause bgm", NULL, 0, NULL);
+			isMusicPlay = false;
+		}
+		else if (command == "resume") {
+			mciSendString("resume bgm", NULL, 0, NULL);
+			isMusicPlay = true;
+		}
+		else if (command == "stop") {
+			mciSendString("stop bgm", NULL, 0, NULL);
+			mciSendString("close bgm", NULL, 0, NULL);
+			isMusicPlay = false;
+		}
+		else if (command == "check") {
+			mciSendString("status bgm mode", tch, 100, NULL);
+			//cout << tch << "\n";
+			if (tch[0] == 's') {
+				//cout << "seek to start\n";
+				mciSendString("seek bgm to start", NULL, 100, NULL);
+				mciSendString("play bgm", NULL, 0, NULL);
+			}
+		}
+		else {
+			cout << "music command not found!\n";
+		}
+	}
 }
 
 // Added in Exercise 9 - Start *****************************************************************
@@ -136,7 +179,7 @@ void computeAnglesFromMatrix()
 void checkSpeedWithGravity() {
 	float g = 9.8f;		// gravity constant
 	float pi = acos(-1);
-    printf("%f \n", yangle);
+    //printf("%f \n", yangle);
 	// calculate one by one. @magicall different between plane and ball.........
 	ball_speed[0] += 1.0f * sinf(yangle/180.0f*pi) * g * ball_speed_unit;
 	ball_speed[1] += -1.0f * sinf(xangle/180.0f*pi) * g * ball_speed_unit;
@@ -322,18 +365,33 @@ void display(GLFWwindow* window, const cv::Mat &img_bgr, std::vector<Marker> &ma
 // Added in Exercise 9 - Start *****************************************************************
    float resultMatrix_005A[16];
    float resultMatrix_0272[16];
-   for(int i=0; i<markers.size(); i++){
-       const int code =markers[i].code;
-       if(code == 0x0690) {
-           for(int j=0; j<16; j++)
-               resultMatrix_005A[j] = markers[i].resultMatrix[j];
-       }
-    //    else if(code == 0x02690){
-    //        for(int j=0; j<16; j++)
-    //            resultMatrix_0272[j] = markers[i].resultMatrix[j];
-    //    }
+   if (markers.size() <= 0) {
+	   isPlay = false;
    }
-
+   else {
+	   isPlay = false;
+	   for (int i = 0; i < markers.size(); i++) {
+		   const int code = markers[i].code;
+		   if (code == 0x0690) {
+			   isPlay = true;
+			   for (int j = 0; j < 16; j++)
+				   resultMatrix_005A[j] = markers[i].resultMatrix[j];
+		   }
+		   //    else if(code == 0x02690){
+		   //        for(int j=0; j<16; j++)
+		   //            resultMatrix_0272[j] = markers[i].resultMatrix[j];
+		   //    }
+	   }
+   }
+   if (isPlay==true) {
+	   musicControl("resume");
+	   musicControl("check");
+	   //cout << "rusume\n";
+   }
+   else {
+	   musicControl("pause");
+	   //cout << "pause\n";
+   }
 
    for (int x=0; x<4; ++x)
        for (int y=0; y<4; ++y)
@@ -351,7 +409,7 @@ void display(GLFWwindow* window, const cv::Mat &img_bgr, std::vector<Marker> &ma
    drawMaze(maze);
     // Sphere(ball) event
     glColor4f(0,0,1,0.5);
-    ball_movement();
+	if(isPlay==true) ball_movement();
     glTranslatef(ballpos[0], ballpos[1], ballpos[2]);
     drawSphere( ball_radius, 10, 10 );
 
@@ -413,6 +471,9 @@ int main(int argc, char* argv[]) {
    // initialize the GL library
    initGL(argc, argv);
 
+   musicControl("play");
+   musicControl("pause");
+
    maze = generate_maze();
     for (int i = 0; i < maze.size(); ++i)
     {
@@ -453,9 +514,9 @@ int main(int argc, char* argv[]) {
        /* Track a marker */
        markerTracker.findMarker( img_bgr, markers);///resultMatrix);
 
-//        cv::imshow("img_bgr", img_bgr);
-//        cv::waitKey(10); /// Wait for one sec.
-
+       //cv::imshow("img_bgr", img_bgr);
+       //cv::waitKey(10); /// Wait for one sec.
+	   
        /* Render here */
        display(window, img_bgr, markers);
 
